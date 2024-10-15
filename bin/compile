@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+GRAFANA_ALLOY_VERSION="v1.4.2"
+GRAFANA_ALLOY_URL="https://github.com/grafana/alloy/releases/download/${GRAFANA_ALLOY_VERSION}/alloy-linux-amd64.zip"
+GRAFANA_AGENT_VERSION="v0.32.1"  # Update this to the latest version
+
+echo "-----> Downloading Grafana Alloy"
+curl -L -o grafana-alloy.zip $GRAFANA_ALLOY_URL
+
+echo "-----> Installing Grafana Alloy"
+unzip grafana-alloy.zip -d $BUILD_DIR/bin
+mv $BUILD_DIR/bin/alloy-linux-amd64 $BUILD_DIR/bin/alloy
+chmod +x $BUILD_DIR/bin/alloy
+
+# Create a basic configuration file
+echo "-----> Creating Grafana Alloy configuration"
+cat > $BUILD_DIR/config.alloy <<EOL
+prometheus.exporter.self "alloy_check" { }
+
+discovery.relabel "alloy_check" {
+  targets = prometheus.exporter.self.alloy_check.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = env("DYNO")
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/alloy-check"
+  }
+}
+
+prometheus.scrape "alloy_check" {
+  targets    = discovery.relabel.alloy_check.output
+  forward_to = [prometheus.relabel.alloy_check.receiver]  
+
+  scrape_interval = "60s"
+}
+
+prometheus.relabel "alloy_check" {
+  forward_to = [prometheus.remote_write.metrics_service.receiver]
+
+  rule {
+    source_labels = ["__name__"]
+    regex         = "(prometheus_target_sync_length_seconds_sum|prometheus_target_scrapes_.*|prometheus_target_interval.*|prometheus_sd_discovered_targets|alloy_build.*|prometheus_remote_write_wal_samples_appended_total|process_start_time_seconds)"
+    action        = "keep"
+  }
+}
+
+prometheus.remote_write "metrics_service" {
+  endpoint {
+    url = env("PROMETHEUS_PUSH_URL", "https://localhost:9090/api/prom/push")
+
+    basic_auth {
+      username = env("ALLOY_USERNAME")
+      password = env("ALLOY_PASSWORD")
+    }
+  }
+}
+
+discovery.relabel "metrics_integrations_integrations" {
+        targets = [{
+                __address__ = env("CELERY_METRICS_URL", "localhost:8404"),
+        }]
+
+        rule {
+                target_label = "instance"
+                replacement  = env("DYNO")
+        }
+}
+
+prometheus.scrape "metrics_integrations_integrations" {
+        targets    = discovery.relabel.metrics_integrations_integrations.output
+        forward_to = [prometheus.remote_write.metrics_service.receiver]
+        job_name   = "integrations/heroku_metrics"
+        scrape_interval = "60s"
+}
+EOL
+
+# Create a start script
+echo "-----> Creating start script"
+mkdir -p $BUILD_DIR/bin
+cat > $BUILD_DIR/bin/start-alloy <<EOL
+#!/bin/bash
+nohup /app/bin/alloy --config.file=/app/config.alloy &
+EOL
+chmod +x $BUILD_DIR/bin/start-alloy

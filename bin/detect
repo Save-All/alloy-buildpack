@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+if [[ -n "$DYNO" && ! "$DYNO" =~ ^web\. ]]; then
+    echo "Grafana Agent (non-web dyno)"
+    exit 0
+else
+    echo "Skipping Grafana Agent for web dyno"
+    exit 1
+fi
