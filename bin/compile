@@ -86,6 +86,7 @@ echo "-----> Creating start script"
 mkdir -p $BUILD_DIR/bin
 cat > $BUILD_DIR/bin/start-alloy <<EOL
 #!/bin/bash
-nohup /app/bin/alloy --config.file=/app/config.alloy &
+CONFIG_FILE=/app/config.alloy
+nohup /app/bin/alloy run &
 EOL
 chmod +x $BUILD_DIR/bin/start-alloy
