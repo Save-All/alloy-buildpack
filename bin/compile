@@ -128,7 +128,7 @@ prometheus.remote_write "metrics_service" {
 
 discovery.relabel "web_dyno" {
   targets = [{
-    __address__ = "localhost:${env('PORT')}/metrics",
+    __address__ = "localhost:" + env("PORT"),
   }]
 
   rule {
@@ -141,7 +141,7 @@ discovery.relabel "web_dyno" {
 prometheus.scrape "web_dyno" {
   targets    = discovery.relabel.web_dyno.output
   forward_to = [prometheus.remote_write.metrics_service.receiver]
-  job_name   = "web_metrics/${env('ENVIRONMENT') | lower}"
+  job_name   = "web_metrics/" + env("ENVIRONMENT")
   scrape_interval = "60s"
 }
 EOL
