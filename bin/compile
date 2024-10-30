@@ -17,7 +17,7 @@ chmod +x $BUILD_DIR/bin/alloy
 
 # Create a basic configuration file
 echo "-----> Creating Grafana Alloy configuration"
-cat > $BUILD_DIR/config.alloy <<EOL
+cat > $BUILD_DIR/config.alloy.celery <<EOL
 prometheus.exporter.self "alloy_check" { }
 
 discovery.relabel "alloy_check" {
@@ -78,6 +78,71 @@ prometheus.scrape "metrics_integrations_integrations" {
         forward_to = [prometheus.remote_write.metrics_service.receiver]
         job_name   = "integrations/heroku_metrics"
         scrape_interval = "60s"
+}
+EOL
+
+cat > $BUILD_DIR/config.alloy.web <<EOL
+prometheus.exporter.self "alloy_check" { }
+
+discovery.relabel "alloy_check" {
+  targets = prometheus.exporter.self.alloy_check.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = env("DYNO")
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/alloy-check"
+  }
+}
+
+prometheus.scrape "alloy_check" {
+  targets    = discovery.relabel.alloy_check.output
+  forward_to = [prometheus.relabel.alloy_check.receiver]  
+
+  scrape_interval = "60s"
+}
+
+prometheus.relabel "alloy_check" {
+  forward_to = [prometheus.remote_write.metrics_service.receiver]
+
+  rule {
+    source_labels = ["__name__"]
+    regex         = "(prometheus_target_sync_length_seconds_sum|prometheus_target_scrapes_.*|prometheus_target_interval.*|prometheus_sd_discovered_targets|alloy_build.*|prometheus_remote_write_wal_samples_appended_total|process_start_time_seconds)"
+    action        = "keep"
+  }
+}
+
+prometheus.remote_write "metrics_service" {
+  endpoint {
+    url = env("PROMETHEUS_PUSH_URL", "https://localhost:9090/api/prom/push")
+
+    basic_auth {
+      username = env("ALLOY_USERNAME")
+      password = env("ALLOY_PASSWORD")
+    }
+  }
+}
+
+discovery.relabel "web_dyno" {
+  targets = [{
+    __address__ = "localhost:${env('PORT')}/metrics",
+  }]
+
+  rule {
+    source_labels = ["__address__"]
+    target_label  = "instance"
+    replacement   = env("DYNO")
+  }
+}
+
+prometheus.scrape "web_dyno" {
+  targets    = discovery.relabel.web_dyno.output
+  forward_to = [prometheus.remote_write.metrics_service.receiver]
+  job_name   = "web_metrics"
+  scrape_interval = "60s"
 }
 EOL
 
