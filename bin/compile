@@ -76,7 +76,7 @@ discovery.relabel "metrics_integrations_integrations" {
 prometheus.scrape "metrics_integrations_integrations" {
         targets    = discovery.relabel.metrics_integrations_integrations.output
         forward_to = [prometheus.remote_write.metrics_service.receiver]
-        job_name   = "integrations/heroku_metrics"
+        job_name   = "celery_metrics/${env("ENVIRONMENT") | lower}"
         scrape_interval = "60s"
 }
 EOL
@@ -141,7 +141,7 @@ discovery.relabel "web_dyno" {
 prometheus.scrape "web_dyno" {
   targets    = discovery.relabel.web_dyno.output
   forward_to = [prometheus.remote_write.metrics_service.receiver]
-  job_name   = "web_metrics"
+  job_name   = "web_metrics/${env("ENVIRONMENT") | lower}"
   scrape_interval = "60s"
 }
 EOL
