@@ -81,7 +81,7 @@ prometheus.scrape "metrics_integrations_integrations" {
 }
 EOL
 
-cat > $BUILD_DIR/config.alloy.web <<EOL
+cat > $BUILD_DIR/config.alloy.web << 'EOL'
 prometheus.exporter.self "alloy_check" { }
 
 discovery.relabel "alloy_check" {
