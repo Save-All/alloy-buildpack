@@ -76,7 +76,7 @@ discovery.relabel "metrics_integrations_integrations" {
 prometheus.scrape "metrics_integrations_integrations" {
         targets    = discovery.relabel.metrics_integrations_integrations.output
         forward_to = [prometheus.remote_write.metrics_service.receiver]
-        job_name   = "celery_metrics/${env("ENVIRONMENT") | lower}"
+        job_name   = "celery_metrics/${env('ENVIRONMENT') | lower}"
         scrape_interval = "60s"
 }
 EOL
