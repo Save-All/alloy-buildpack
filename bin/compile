@@ -80,10 +80,10 @@ cat > $BUILD_DIR/config.alloy.web << 'EOL'
 prometheus.exporter.self "alloy_check" { }
 
 prometheus.exporter.unix "dyno_metrics" { 
-  set_collectors = ["cpu", "memory"]
+  set_collectors = ["cpu", "meminfo"]
 }
 prometheus.scrape "dyno_metrics" {
-  targets    = prometheus.exporter.unix.dyno_metrics.targets
+  targets    = discovery.relabel.dyno_metrics.output
   forward_to = [prometheus.remote_write.metrics_service.receiver]
   job_name   = "dyno_metrics/" + env("ENVIRONMENT")
   scrape_interval = "60s"
@@ -91,7 +91,7 @@ prometheus.scrape "dyno_metrics" {
 
 
 discovery.relabel "dyno_metrics" {
-  targets = prometheus.scrape.dyno_metrics.targets
+  targets = prometheus.exporter.unix.dyno_metrics.targets
 
   rule {
     target_label = "instance"
