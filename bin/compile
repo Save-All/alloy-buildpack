@@ -79,7 +79,9 @@ EOL
 cat > $BUILD_DIR/config.alloy.web << 'EOL'
 prometheus.exporter.self "alloy_check" { }
 
-prometheus.exporter.unix "dyno_metrics" { }
+prometheus.exporter.unix "dyno_metrics" { 
+  set_collectors = ["cpu", "memory"]
+}
 prometheus.scrape "dyno_metrics" {
   targets    = prometheus.exporter.unix.dyno_metrics.targets
   forward_to = [prometheus.remote_write.metrics_service.receiver]
@@ -89,7 +91,7 @@ prometheus.scrape "dyno_metrics" {
 
 
 discovery.relabel "dyno_metrics" {
-  targets = prometheus.exporter.unix.dyno_metrics.targets
+  targets = prometheus.scrape.dyno_metrics.targets
 
   rule {
     target_label = "instance"
