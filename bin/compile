@@ -84,7 +84,7 @@ prometheus.remote_write "metrics_service" {
 
 discovery.relabel "metrics_integrations_integrations" {
         targets = [{
-                __address__ = env("CELERY_METRICS_URL", "localhost:8404"),
+                __address__ = env("CELERY_METRICS_URL"),
         }]
 
         rule {
