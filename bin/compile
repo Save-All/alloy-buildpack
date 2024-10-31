@@ -88,12 +88,26 @@ prometheus.scrape "dyno_metrics" {
 }
 
 
+discovery.relabel "dyno_metrics" {
+  targets = prometheus.exporter.unix.dyno_metrics.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = "web"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "dyno_metrics/" + env("ENVIRONMENT")
+  }
+}
+
 discovery.relabel "alloy_check" {
   targets = prometheus.exporter.self.alloy_check.targets
 
   rule {
     target_label = "instance"
-    replacement  = regex(env("DYNO"), "^([^.]+)")
+    replacement  = "web"
   }
 
   rule {
