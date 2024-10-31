@@ -95,7 +95,7 @@ discovery.relabel "dyno_metrics" {
 
   rule {
     target_label = "instance"
-    replacement  = "web"
+    replacement  = env("DYNO")
   }
 
   rule {
