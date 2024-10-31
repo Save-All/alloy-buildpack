@@ -84,7 +84,7 @@ discovery.relabel "alloy_check" {
 
   rule {
     target_label = "instance"
-    replacement  = env("DYNO")
+    replacement  = regex(env("DYNO"), "^([^.]+)")
   }
 
   rule {
@@ -129,7 +129,7 @@ discovery.relabel "web_dyno" {
   rule {
     source_labels = ["__address__"]
     target_label  = "instance"
-    replacement   = env("DYNO")
+    replacement   = regex(env("DYNO"), "^([^.]+)")
   }
 }
 
