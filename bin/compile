@@ -48,7 +48,7 @@ prometheus.relabel "alloy_check" {
 
 
 prometheus.exporter.unix "dyno_metrics" { 
-  set_collectors = ["cpu", "meminfo"]
+  set_collectors = ["cpu", "meminfo", "loadavg"]
 }
 prometheus.scrape "dyno_metrics" {
   targets    = discovery.relabel.dyno_metrics.output
@@ -105,7 +105,7 @@ cat > $BUILD_DIR/config.alloy.web << 'EOL'
 prometheus.exporter.self "alloy_check" { }
 
 prometheus.exporter.unix "dyno_metrics" { 
-  set_collectors = ["cpu", "meminfo"]
+  set_collectors = ["cpu", "meminfo", "loadavg"]
 }
 prometheus.scrape "dyno_metrics" {
   targets    = discovery.relabel.dyno_metrics.output
