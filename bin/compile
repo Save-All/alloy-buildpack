@@ -79,6 +79,15 @@ EOL
 cat > $BUILD_DIR/config.alloy.web << 'EOL'
 prometheus.exporter.self "alloy_check" { }
 
+prometheus.exporter.unix "dyno_metrics" { }
+prometheus.scrape "dyno_metrics" {
+  targets    = prometheus.exporter.unix.dyno_metrics.targets
+  forward_to = [prometheus.remote_write.metrics_service.receiver]
+  job_name   = "dyno_metrics/" + env("ENVIRONMENT")
+  scrape_interval = "60s"
+}
+
+
 discovery.relabel "alloy_check" {
   targets = prometheus.exporter.self.alloy_check.targets
 
