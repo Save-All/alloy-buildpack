@@ -138,7 +138,7 @@ discovery.relabel "web_dyno" {
   rule {
     source_labels = ["__address__"]
     target_label  = "instance"
-    replacement   = regex(env("DYNO"), "^([^.]+)")
+    replacement   = "web"
   }
 }
 
