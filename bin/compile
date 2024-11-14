@@ -47,30 +47,6 @@ prometheus.relabel "alloy_check" {
 }
 
 
-prometheus.exporter.unix "dyno_metrics" { 
-  set_collectors = ["cpu", "meminfo", "loadavg"]
-}
-prometheus.scrape "dyno_metrics" {
-  targets    = discovery.relabel.dyno_metrics.output
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
-  job_name   = "dyno_metrics/" + env("ENVIRONMENT")
-  scrape_interval = "60s"
-}
-discovery.relabel "dyno_metrics" {
-  targets = prometheus.exporter.unix.dyno_metrics.targets
-
-  rule {
-    target_label = "instance"
-    replacement  = env("DYNO")
-  }
-
-  rule {
-    target_label = "job"
-    replacement  = "dyno_metrics/" + env("ENVIRONMENT")
-  }
-}
-
-
 prometheus.remote_write "metrics_service" {
   endpoint {
     url = env("PROMETHEUS_PUSH_URL")
@@ -82,50 +58,10 @@ prometheus.remote_write "metrics_service" {
   }
 }
 
-discovery.relabel "metrics_integrations_integrations" {
-        targets = [{
-                __address__ = env("CELERY_METRICS_URL"),
-        }]
-
-        rule {
-                target_label = "instance"
-                replacement  = env("DYNO")
-        }
-}
-
-prometheus.scrape "metrics_integrations_integrations" {
-        targets    = discovery.relabel.metrics_integrations_integrations.output
-        forward_to = [prometheus.remote_write.metrics_service.receiver]
-        job_name   = "celery_metrics/" + env("ENVIRONMENT")
-        scrape_interval = "60s"
-}
 EOL
 
 cat > $BUILD_DIR/config.alloy.web << 'EOL'
 prometheus.exporter.self "alloy_check" { }
-
-prometheus.exporter.unix "dyno_metrics" { 
-  set_collectors = ["cpu", "meminfo", "loadavg"]
-}
-prometheus.scrape "dyno_metrics" {
-  targets    = discovery.relabel.dyno_metrics.output
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
-  job_name   = "dyno_metrics/" + env("ENVIRONMENT")
-  scrape_interval = "60s"
-}
-discovery.relabel "dyno_metrics" {
-  targets = prometheus.exporter.unix.dyno_metrics.targets
-
-  rule {
-    target_label = "instance"
-    replacement  = env("DYNO")
-  }
-
-  rule {
-    target_label = "job"
-    replacement  = "dyno_metrics/" + env("ENVIRONMENT")
-  }
-}
 
 discovery.relabel "alloy_check" {
   targets = prometheus.exporter.self.alloy_check.targets
