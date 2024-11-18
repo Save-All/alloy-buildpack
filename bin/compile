@@ -117,9 +117,18 @@ discovery.relabel "web_dyno" {
   }
 }
 
+prometheus.relabel "web_dyno" {
+    forward_to = [prometheus.remote_write.metrics_service.receiver]
+    rule {
+        action       = "keep"
+        source_labels = ["path"]
+        regex        = "/api/.*"
+    }
+}
+
 prometheus.scrape "web_dyno" {
   targets    = discovery.relabel.web_dyno.output
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
+  forward_to = [prometheus.relabel.web_dyno.receiver]
   job_name   = "web_metrics/" + env("ENVIRONMENT")
   scrape_interval = "60s"
 }
