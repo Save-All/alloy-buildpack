@@ -57,7 +57,7 @@ prometheus.remote_write "metrics_service" {
     }
     metadata_config {
       send = true
-      send_interval = "2m"
+      send_interval = "3m"
     }
   }
 }
@@ -80,7 +80,7 @@ discovery.relabel "alloy_check" {
 
   rule {
     target_label = "instance"
-    replacement  = "web"
+    replacement  = env("DYNO")
   }
 
   rule {
@@ -125,7 +125,7 @@ discovery.relabel "web_dyno" {
   rule {
     source_labels = ["__address__"]
     target_label  = "instance"
-    replacement   = "web"
+    replacement   = env("DYNO")
   }
 }
 
@@ -142,7 +142,7 @@ prometheus.scrape "web_dyno" {
   targets    = discovery.relabel.web_dyno.output
   forward_to = [prometheus.relabel.web_dyno.receiver]
   job_name   = "web_metrics/" + env("ENVIRONMENT")
-  scrape_interval = "300s"
+  scrape_interval = "120s"
 }
 EOL
 
