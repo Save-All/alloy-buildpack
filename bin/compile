@@ -20,6 +20,10 @@ echo "-----> Creating Grafana Alloy configuration"
 cat > $BUILD_DIR/config.alloy.celery <<EOL
 prometheus.exporter.self "alloy_check" { }
 
+livedebugging {
+  enabled = true
+}
+
 discovery.relabel "alloy_check" {
   targets = prometheus.exporter.self.alloy_check.targets
 
@@ -68,6 +72,7 @@ prometheus.receive_http "default" {
   }
 
 	forward_to = [prometheus.remote_write.metrics_service.receiver]
+
 }
 
 EOL
